@@ -1,5 +1,6 @@
 body {
   background-color: #0b2447;
+  overflow: hidden;
 }
 
 .wrapper {
@@ -10,7 +11,7 @@ body {
   justify-content: center;
 }
 
-.animation-container {
+#game-screen {
   width: 400px;
   height: 400px;
   background-color: #5c469c;
