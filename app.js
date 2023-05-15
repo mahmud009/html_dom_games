@@ -1,4 +1,6 @@
 const screen = document.getElementById("game-screen");
+screen.style.width = 400 + "px";
+screen.style.height = 400 + "px";
 const screenWidth = screen.offsetHeight;
 const screenHeight = screen.offsetWidth;
 const enemyWidth = 15;
@@ -17,15 +19,26 @@ function createElement({ name, child }) {
 function randomPosition(count) {
   let coords = [];
   for (let i = 0; i < count; i++) {
-    const random = () => Math.floor(Math.random() * 360);
+    const random = () => Math.floor(Math.random() * (screenWidth - enemyWidth));
     coords.push({ x: random(), y: random() });
   }
   return coords;
 }
 
+function randomHexColor() {
+  let chars = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"];
+  let hex = "";
+  for (let i = 0; i < 6; i++) {
+    hex += chars[Math.floor(Math.random() * (chars.length - 1))];
+  }
+  return "#" + hex;
+}
+
+console.log(randomHexColor());
+
 function createEnemies() {
-  let coords = [{ x: 195, y: 195 }];
-  // let coords = randomPosition(1000);
+  // let coords = [{ x: 195, y: 195 }];
+  let coords = randomPosition(50);
   coords.forEach((coord) => {
     let enemy = createElement({ name: "div" });
     enemy.classList.add("enemy");
@@ -33,32 +46,26 @@ function createEnemies() {
     enemy.style.height = enemyHeight + "px";
     enemy.style.top = coord.y + "px";
     enemy.style.left = coord.x + "px";
+    enemy.style.backgroundColor = randomHexColor();
     screen.append(enemy);
 
-    let angle = degToRad(288);
+    let angle = degToRad(Math.floor(Math.random() * 360));
     setInterval(() => {
       // angle = degToRad(radToDeg(angle) + 1);
       let currentX = enemy.offsetLeft;
       let currentY = enemy.offsetTop;
       let isHorizEdge = currentX <= 0 || currentX >= screenWidth - enemyWidth;
       let isVertAge = currentY <= 0 || currentY >= screenHeight - enemyHeight;
+      let newX, newY;
+      if (isVertAge) angle = degToRad(180 - radToDeg(angle));
+      if (isHorizEdge) angle = degToRad(360 - radToDeg(angle));
 
-      let x, y;
-      if (isVertAge) {
-        angle = degToRad(180 - radToDeg(angle));
-      }
-      if (isHorizEdge) {
-        angle = degToRad(288 - 180);
-        console.log(radToDeg(angle));
-        // return;
-      }
+      newX = coord.x + Math.sin(angle);
+      newY = coord.y + Math.cos(angle);
+      coord = { x: newX, y: newY };
 
-      x = coord.x + Math.sin(angle);
-      y = coord.y + Math.cos(angle);
-      coord = { x, y };
-
-      enemy.style.top = y + "px";
-      enemy.style.left = x + "px";
+      enemy.style.top = newY + "px";
+      enemy.style.left = newX + "px";
     }, 10);
   });
 }
@@ -92,4 +99,4 @@ function handleKeyboard() {
 
 // createPlayer();
 createEnemies();
-handleKeyboard();
+// handleKeyboard();

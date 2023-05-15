@@ -12,15 +12,13 @@ body {
 }
 
 #game-screen {
-  width: 400px;
-  height: 400px;
   background-color: #5c469c;
   position: relative;
   overflow: hidden;
 }
 
 .enemy {
-  background-color: red;
+  border: 2px solid;
   position: absolute;
   border-radius: 50%;
 }
