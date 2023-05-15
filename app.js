@@ -3,6 +3,10 @@ const screenWidth = screen.offsetHeight;
 const screenHeight = screen.offsetWidth;
 const enemyWidth = 15;
 const enemyHeight = 15;
+const degToRad = (deg) => deg * (Math.PI / 180);
+const radToDeg = (rad) => rad / (Math.PI / 180);
+
+let print = console.log;
 
 function createElement({ name, child }) {
   let element = document.createElement(name);
@@ -21,7 +25,7 @@ function randomPosition(count) {
 
 function createEnemies() {
   let coords = [{ x: 195, y: 195 }];
-  // let coords = randomPosition(1);
+  // let coords = randomPosition(1000);
   coords.forEach((coord) => {
     let enemy = createElement({ name: "div" });
     enemy.classList.add("enemy");
@@ -31,24 +35,22 @@ function createEnemies() {
     enemy.style.left = coord.x + "px";
     screen.append(enemy);
 
-    // 2*Math.PI
-    let degToRad = (deg) => deg * (Math.PI / 180);
-    let radToDeg = (rad) => rad / (Math.PI / 180);
-    let angle = degToRad(15);
+    let angle = degToRad(288);
     setInterval(() => {
       // angle = degToRad(radToDeg(angle) + 1);
       let currentX = enemy.offsetLeft;
       let currentY = enemy.offsetTop;
-
-      let isEdge =
-        currentX <= 0 ||
-        currentX >= screenWidth - enemyWidth ||
-        currentY <= 0 ||
-        currentY >= screenHeight - enemyHeight;
+      let isHorizEdge = currentX <= 0 || currentX >= screenWidth - enemyWidth;
+      let isVertAge = currentY <= 0 || currentY >= screenHeight - enemyHeight;
 
       let x, y;
-      if (isEdge) {
-        angle = degToRad(-(180 - radToDeg(angle)));
+      if (isVertAge) {
+        angle = degToRad(180 - radToDeg(angle));
+      }
+      if (isHorizEdge) {
+        angle = degToRad(288 - 180);
+        console.log(radToDeg(angle));
+        // return;
       }
 
       x = coord.x + Math.sin(angle);
@@ -91,7 +93,3 @@ function handleKeyboard() {
 // createPlayer();
 createEnemies();
 handleKeyboard();
-
-function test(a, b) {
-  console.log(a, b);
-}
