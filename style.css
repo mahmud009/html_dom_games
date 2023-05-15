@@ -19,9 +19,7 @@ body {
   overflow: hidden;
 }
 
-.food {
-  width: 10px;
-  height: 10px;
+.enemy {
   background-color: red;
   position: absolute;
   border-radius: 50%;
