@@ -1,4 +1,5 @@
 const screen = document.getElementById("game-screen");
+
 screen.style.width = 400 + "px";
 screen.style.height = 400 + "px";
 const screenWidth = screen.offsetHeight;
@@ -7,8 +8,6 @@ const enemyWidth = 15;
 const enemyHeight = 15;
 const degToRad = (deg) => deg * (Math.PI / 180);
 const radToDeg = (rad) => rad / (Math.PI / 180);
-
-let print = console.log;
 
 function createElement({ name, child }) {
   let element = document.createElement(name);
@@ -33,8 +32,6 @@ function randomHexColor() {
   }
   return "#" + hex;
 }
-
-console.log(randomHexColor());
 
 function createEnemies() {
   // let coords = [{ x: 195, y: 195 }];
@@ -98,5 +95,53 @@ function handleKeyboard() {
 }
 
 // createPlayer();
-createEnemies();
+// createEnemies();
 // handleKeyboard();
+
+const canvas = document.getElementById("game-canvas");
+canvas.style.width = 400 + "px";
+canvas.style.height = 400 + "px";
+canvas.style.backgroundColor = "#5c469c";
+
+class Enemy {
+  constructor(pos) {
+    this.dom = createElement({ name: "div" });
+    this.pos = pos;
+    this.dom.classList.add("enemy");
+    this.dom.style.width = enemyWidth + "px";
+    this.dom.style.height = enemyHeight + "px";
+    this.dom.style.top = pos.y + "px";
+    this.dom.style.left = pos.x + "px";
+    this.dom.style.backgroundColor = randomHexColor();
+    screen.append(this.dom);
+  }
+
+  move() {
+    let currentX = this.dom.offsetLeft;
+    let currentY = this.dom.offsetTop;
+    let isHorizEdge = currentX <= 0 || currentX >= screenWidth - enemyWidth;
+    let isVertAge = currentY <= 0 || currentY >= screenHeight - enemyHeight;
+    let newX, newY;
+    if (isVertAge) angle = degToRad(180 - radToDeg(angle));
+    if (isHorizEdge) angle = degToRad(360 - radToDeg(angle));
+
+    newX = this.pos.x + Math.sin(angle);
+    newY = this.pos.y + Math.cos(angle);
+    this.pos = { x: newX, y: newY };
+
+    this.dom.style.top = newY + "px";
+    this.dom.style.left = newX + "px";
+  }
+
+  update() {}
+}
+
+let enemy = new Enemy({ x: 200, y: 200 });
+let angle = degToRad(Math.floor(Math.random() * 360));
+
+function animate() {
+  enemy.move();
+  requestAnimationFrame(animate);
+}
+
+animate();
