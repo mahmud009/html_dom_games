@@ -1,147 +1,114 @@
-const screen = document.getElementById("game-screen");
-
-screen.style.width = 400 + "px";
-screen.style.height = 400 + "px";
-const screenWidth = screen.offsetHeight;
-const screenHeight = screen.offsetWidth;
-const enemyWidth = 15;
-const enemyHeight = 15;
-const degToRad = (deg) => deg * (Math.PI / 180);
-const radToDeg = (rad) => rad / (Math.PI / 180);
-
-function createElement({ name, child }) {
-  let element = document.createElement(name);
-  if (child != undefined) element.appendChild(child);
-  return element;
+function random(min, max) {
+  let rand = Math.random();
+  if (arguments.length > 1) {
+    return Math.ceil(rand * (max - min)) + min;
+  }
+  return Math.ceil(rand * min);
 }
 
-function randomPosition(count) {
+function randomPosition(count, xBound, yBound) {
+  if (count == 1) return { x: random(0, xBound), y: random(0, yBound) };
   let coords = [];
   for (let i = 0; i < count; i++) {
-    const random = () => Math.floor(Math.random() * (screenWidth - enemyWidth));
-    coords.push({ x: random(), y: random() });
+    coords.push({ x: random(0, xBound), y: random(0, yBound) });
   }
   return coords;
 }
 
-function randomHexColor() {
-  let chars = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, "A", "B", "C", "D", "E", "F"];
-  let hex = "";
+function randomColor() {
+  let chars = "0123456789ABCDEF";
+  let color = "#";
   for (let i = 0; i < 6; i++) {
-    hex += chars[Math.floor(Math.random() * (chars.length - 1))];
+    color += chars[random(chars.length - 1)];
   }
-  return "#" + hex;
+  return color;
 }
 
-function createEnemies() {
-  // let coords = [{ x: 195, y: 195 }];
-  let coords = randomPosition(50);
-  coords.forEach((coord) => {
-    let enemy = createElement({ name: "div" });
-    enemy.classList.add("enemy");
-    enemy.style.width = enemyWidth + "px";
-    enemy.style.height = enemyHeight + "px";
-    enemy.style.top = coord.y + "px";
-    enemy.style.left = coord.x + "px";
-    enemy.style.backgroundColor = randomHexColor();
-    screen.append(enemy);
-
-    let angle = degToRad(Math.floor(Math.random() * 360));
-    setInterval(() => {
-      // angle = degToRad(radToDeg(angle) + 1);
-      let currentX = enemy.offsetLeft;
-      let currentY = enemy.offsetTop;
-      let isHorizEdge = currentX <= 0 || currentX >= screenWidth - enemyWidth;
-      let isVertAge = currentY <= 0 || currentY >= screenHeight - enemyHeight;
-      let newX, newY;
-      if (isVertAge) angle = degToRad(180 - radToDeg(angle));
-      if (isHorizEdge) angle = degToRad(360 - radToDeg(angle));
-
-      newX = coord.x + Math.sin(angle);
-      newY = coord.y + Math.cos(angle);
-      coord = { x: newX, y: newY };
-
-      enemy.style.top = newY + "px";
-      enemy.style.left = newX + "px";
-    }, 10);
-  });
+function createElement(name, attrs, ...children) {
+  let dom = document.createElement(name);
+  for (let attr of Object.keys(attrs)) {
+    dom.setAttribute(attr, attrs[attr]);
+  }
+  for (let child of children) {
+    dom.appendChild(child);
+  }
+  return dom;
 }
 
-function createPlayer() {
-  let player = document.createElement("div");
-  player.classList.add("player");
-  player.setAttribute("id", "player");
-  screen.append(player);
+class Display {
+  constructor(parent) {
+    this.dom = createElement("div", { id: "display" });
+    this.actorLayer = null;
+    parent.appendChild(this.dom);
+  }
+  sync(draw) {
+    if (this.actorLayer) this.actorLayer.remove();
+    this.actorLayer = draw();
+    this.dom.appendChild(this.actorLayer);
+  }
 }
-
-function handleKeyboard() {
-  let speed = 15;
-  window.addEventListener("keydown", function (event) {
-    // console.log(event);
-    let player = document.getElementById("player");
-    if (event.code == "ArrowRight") {
-      player.style.left = player.offsetLeft + speed + "px";
-    }
-    if (event.code == "ArrowLeft") {
-      player.style.left = player.offsetLeft - speed + "px";
-    }
-    if (event.code == "ArrowUp") {
-      player.style.top = player.offsetTop - speed + "px";
-    }
-    if (event.code == "ArrowDown") {
-      player.style.top = player.offsetTop + speed + "px";
-    }
-  });
-}
-
-// createPlayer();
-// createEnemies();
-// handleKeyboard();
-
-const canvas = document.getElementById("game-canvas");
-canvas.style.width = 400 + "px";
-canvas.style.height = 400 + "px";
-canvas.style.backgroundColor = "#5c469c";
 
 class Enemy {
-  constructor(pos) {
-    this.dom = createElement({ name: "div" });
-    this.pos = pos;
-    this.dom.classList.add("enemy");
-    this.dom.style.width = enemyWidth + "px";
-    this.dom.style.height = enemyHeight + "px";
-    this.dom.style.top = pos.y + "px";
-    this.dom.style.left = pos.x + "px";
-    this.dom.style.backgroundColor = randomHexColor();
-    screen.append(this.dom);
+  constructor(position, speed, color) {
+    this.type = "enemy";
+    this.position = position;
+    this.speed = speed;
+    this.color = color;
   }
-
-  move() {
-    let currentX = this.dom.offsetLeft;
-    let currentY = this.dom.offsetTop;
-    let isHorizEdge = currentX <= 0 || currentX >= screenWidth - enemyWidth;
-    let isVertAge = currentY <= 0 || currentY >= screenHeight - enemyHeight;
-    let newX, newY;
-    if (isVertAge) angle = degToRad(180 - radToDeg(angle));
-    if (isHorizEdge) angle = degToRad(360 - radToDeg(angle));
-
-    newX = this.pos.x + Math.sin(angle);
-    newY = this.pos.y + Math.cos(angle);
-    this.pos = { x: newX, y: newY };
-
-    this.dom.style.top = newY + "px";
-    this.dom.style.left = newX + "px";
+  update(delta) {
+    let y = (this.position.y += (this.speed * delta) / 1000);
+    return new Enemy({ x: this.position.x, y }, this.speed, this.color);
   }
-
-  update() {}
 }
 
-let enemy = new Enemy({ x: 200, y: 200 });
-let angle = degToRad(Math.floor(Math.random() * 360));
-
-function animate() {
-  enemy.move();
-  requestAnimationFrame(animate);
+function draw(actors) {
+  let children = actors.map((child) => {
+    let dom = createElement("div", { class: `actor ${child.type}` });
+    dom.style.top = child.position.y + "px";
+    dom.style.left = child.position.x + "px";
+    dom.style.backgroundColor = child.color;
+    return dom;
+  });
+  return createElement("div", {}, ...children);
 }
 
-animate();
+class State {
+  constructor() {
+    this.actors = [];
+    this.elapsedTime = 0;
+  }
+  update(delta) {
+    this.elapsedTime += delta;
+    if (this.elapsedTime / 1000 >= 1) {
+      let randomCoords = randomPosition(100, 400, -400);
+      let newEnemies = randomCoords.map((coord) => {
+        return new Enemy(coord, random(100, 200), randomColor());
+      });
+      this.actors.push(...newEnemies);
+      this.elapsedTime = 0;
+    }
+    this.actors = this.actors.filter((actor) => actor.position.y <= 800);
+    this.actors.forEach((actor) => {
+      actor.update(delta);
+    });
+  }
+}
+
+function runGame() {
+  const displayParent = document.getElementById("wrapper");
+  let display = new Display(displayParent);
+  let state = new State();
+
+  let lastTime = performance.now();
+  function loop(time) {
+    let delta = time - lastTime;
+    lastTime = time;
+    state.update(delta);
+    let actors = state.actors;
+    display.sync(() => draw(actors));
+    requestAnimationFrame(loop);
+  }
+  loop(lastTime);
+}
+
+runGame();
