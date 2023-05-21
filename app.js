@@ -7,7 +7,6 @@ function random(min, max) {
 }
 
 function randomPosition(count, xBound, yBound) {
-  if (count == 1) return { x: random(0, xBound), y: random(0, yBound) };
   let coords = [];
   for (let i = 0; i < count; i++) {
     coords.push({ x: random(0, xBound), y: random(0, yBound) });
@@ -35,6 +34,24 @@ function createElement(name, attrs, ...children) {
   return dom;
 }
 
+function draw(actors) {
+  let children = actors.map((child) => {
+    let dom = createElement("div", { class: `actor ${child.type}` });
+    dom.style.top = child.position.y + "px";
+    dom.style.left = child.position.x + "px";
+    dom.style.backgroundColor = child.color;
+    return dom;
+  });
+  return createElement("div", {}, ...children);
+}
+
+class Vec {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 class Display {
   constructor(parent) {
     this.dom = createElement("div", { id: "display" });
@@ -49,44 +66,77 @@ class Display {
 }
 
 class Enemy {
-  constructor(position, speed, color) {
+  constructor(position, speed) {
     this.type = "enemy";
     this.position = position;
     this.speed = speed;
-    this.color = color;
+    this.isFiring = false;
+    this.elapsedTime = 0;
   }
+
+  fire() {
+    let pos = new Vec(this.position.x + 12, this.position.y + 12);
+    return new Bullet(pos, 300, 10);
+  }
+
   update(delta) {
-    let y = (this.position.y += (this.speed * delta) / 1000);
-    return new Enemy({ x: this.position.x, y }, this.speed, this.color);
+    this.elapsedTime += delta;
+    if (this.elapsedTime / 1000 >= 1) {
+      this.isFiring = true;
+      this.elapsedTime = 0;
+    } else {
+      this.isFiring = false;
+    }
+
+    this.position.y += (this.speed * delta) / 1000;
+    return new Enemy(this.position, this.speed);
   }
 }
 
-function draw(actors) {
-  let children = actors.map((child) => {
-    let dom = createElement("div", { class: `actor ${child.type}` });
-    dom.style.top = child.position.y + "px";
-    dom.style.left = child.position.x + "px";
-    dom.style.backgroundColor = child.color;
-    return dom;
-  });
-  return createElement("div", {}, ...children);
+class Bullet {
+  constructor(position, speed, direction) {
+    this.type = "bullet";
+    this.position = position;
+    this.speed = speed;
+    this.direction = direction;
+  }
+
+  update(delta) {
+    this.position.y += (this.speed * delta) / 1000;
+    // this.position.x += (Math.sin(Math.PI) * this.speed * delta) / 1000;
+    return new Bullet(this.position, this.speed);
+  }
 }
 
 class State {
   constructor() {
     this.actors = [];
+    this.spawnInterval = 2000;
+    this.spawnCount = 1;
     this.elapsedTime = 0;
   }
   update(delta) {
     this.elapsedTime += delta;
-    if (this.elapsedTime / 1000 >= 1) {
-      let randomCoords = randomPosition(100, 400, -400);
-      let newEnemies = randomCoords.map((coord) => {
-        return new Enemy(coord, random(100, 200), randomColor());
+    // enemies
+    if (this.elapsedTime / this.spawnInterval >= 1) {
+      let randomCoords = randomPosition(this.spawnCount, 400, -400);
+      let enemies = randomCoords.map((coord) => {
+        return new Enemy(coord, random(50, 100));
       });
-      this.actors.push(...newEnemies);
+      this.actors.push(...enemies);
+
       this.elapsedTime = 0;
     }
+
+    let bullets = [];
+    this.actors.map((enemy) => {
+      if (enemy.isFiring && enemy.position.y > 0) {
+        let bulletPos = new Vec(enemy.position.x + 11.5, enemy.position.y + 26);
+        bullets.push(new Bullet(bulletPos, enemy.speed * 3, 10));
+      }
+    });
+    this.actors.push(...bullets);
+
     this.actors = this.actors.filter((actor) => actor.position.y <= 800);
     this.actors.forEach((actor) => {
       actor.update(delta);
@@ -104,8 +154,7 @@ function runGame() {
     let delta = time - lastTime;
     lastTime = time;
     state.update(delta);
-    let actors = state.actors;
-    display.sync(() => draw(actors));
+    display.sync(() => draw(state.actors));
     requestAnimationFrame(loop);
   }
   loop(lastTime);
