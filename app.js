@@ -65,6 +65,20 @@ class Display {
   }
 }
 
+function createInterval(timeout) {
+  let elapsed = performance.now();
+  let lastTime;
+  return function interval(delta, callback) {
+    elapsed += delta;
+    if (elapsed / timeout >= 1) {
+      callback(lastTime);
+      elapsed = 0;
+    }
+  };
+}
+
+let interval = createInterval(2000);
+
 class Enemy {
   constructor(position, speed) {
     this.type = "enemy";
@@ -72,24 +86,32 @@ class Enemy {
     this.speed = speed;
     this.isFiring = false;
     this.elapsedTime = 0;
-  }
 
-  fire() {
-    let pos = new Vec(this.position.x + 12, this.position.y + 12);
-    return new Bullet(pos, 300, 10);
+    // setInterval(() => {
+    //   this.isFiring = false;
+    // }, 500);
+    // this.isFiring = false;
   }
 
   update(delta) {
-    this.elapsedTime += delta;
-    if (this.elapsedTime / 1000 >= 1) {
+    this.isFiring = false;
+    interval(delta, (lastTime) => {
       this.isFiring = true;
-      this.elapsedTime = 0;
-    } else {
-      this.isFiring = false;
-    }
+      // setTimeout(() => {
+      //   this.isFiring = false;
+      // }, 20);
+    });
 
+    // this.elapsedTime += delta;
+    // if (this.elapsedTime / 1000 >= 1) {
+    //   this.isFiring = true;
+    //   this.elapsedTime = 0;
+    // } else {
+    //   this.isFiring = false;
+    // }
+
+    // this.isFiring = false;
     this.position.y += (this.speed * delta) / 1000;
-    return new Enemy(this.position, this.speed);
   }
 }
 
@@ -103,8 +125,6 @@ class Bullet {
 
   update(delta) {
     this.position.y += (this.speed * delta) / 1000;
-    // this.position.x += (Math.sin(Math.PI) * this.speed * delta) / 1000;
-    return new Bullet(this.position, this.speed);
   }
 }
 
@@ -112,7 +132,7 @@ class State {
   constructor() {
     this.actors = [];
     this.spawnInterval = 2000;
-    this.spawnCount = 1;
+    this.spawnCount = 5;
     this.elapsedTime = 0;
   }
   update(delta) {
