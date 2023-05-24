@@ -34,12 +34,24 @@ function createElement(name, attrs, ...children) {
   return dom;
 }
 
+function createInterval(timeout) {
+  let elapsed = performance.now();
+  return function interval(delta, callback) {
+    elapsed += delta;
+    if (elapsed / timeout >= 1) {
+      callback();
+      elapsed = 0;
+    }
+  };
+}
+
 function draw(actors) {
   let children = actors.map((child) => {
     let dom = createElement("div", { class: `actor ${child.type}` });
+    dom.style.width = child.size.x + "px";
+    dom.style.height = child.size.y + "px";
     dom.style.top = child.position.y + "px";
     dom.style.left = child.position.x + "px";
-    dom.style.backgroundColor = child.color;
     return dom;
   });
   return createElement("div", {}, ...children);
@@ -65,59 +77,27 @@ class Display {
   }
 }
 
-function createInterval(timeout) {
-  let elapsed = performance.now();
-  let lastTime;
-  return function interval(delta, callback) {
-    elapsed += delta;
-    if (elapsed / timeout >= 1) {
-      callback(lastTime);
-      elapsed = 0;
-    }
-  };
-}
-
-let interval = createInterval(2000);
-
 class Enemy {
-  constructor(position, speed) {
+  constructor(size, position, speed) {
     this.type = "enemy";
+    this.size = size;
     this.position = position;
     this.speed = speed;
     this.isFiring = false;
-    this.elapsedTime = 0;
-
-    // setInterval(() => {
-    //   this.isFiring = false;
-    // }, 500);
-    // this.isFiring = false;
+    this.interval = createInterval(500);
   }
 
   update(delta) {
     this.isFiring = false;
-    interval(delta, (lastTime) => {
-      this.isFiring = true;
-      // setTimeout(() => {
-      //   this.isFiring = false;
-      // }, 20);
-    });
-
-    // this.elapsedTime += delta;
-    // if (this.elapsedTime / 1000 >= 1) {
-    //   this.isFiring = true;
-    //   this.elapsedTime = 0;
-    // } else {
-    //   this.isFiring = false;
-    // }
-
-    // this.isFiring = false;
+    this.interval(delta, () => (this.isFiring = true));
     this.position.y += (this.speed * delta) / 1000;
   }
 }
 
 class Bullet {
-  constructor(position, speed, direction) {
+  constructor(size, position, speed, direction) {
     this.type = "bullet";
+    this.size = size;
     this.position = position;
     this.speed = speed;
     this.direction = direction;
@@ -128,31 +108,56 @@ class Bullet {
   }
 }
 
+let result = [];
+for (let i = 0; i < 5; i++) {
+  let isInvalid = false;
+  while (!isInvalid) {
+    let rand = random(1, 20);
+    if (result.length == 0) {
+      result.push(rand);
+      isInvalid = true;
+    } else {
+      result.map((itm) => {
+        if (itm + 4 < rand && itm - 4 > rand) {
+          result.push(rand);
+          isInvalid = true;
+        }
+      });
+    }
+    isInvalid = true;
+  }
+}
+console.log(result);
+
+function createEnemies(count, size) {
+  let randomCoords = randomPosition(count, 400, -100);
+  let enemies = randomCoords.map((coord) => {
+    return new Enemy(size, coord, random(100, 300));
+  });
+  return enemies;
+}
+
 class State {
-  constructor() {
+  constructor(config) {
     this.actors = [];
-    this.spawnInterval = 2000;
+    this.config = config;
+    this.spawnInterval = createInterval(2000);
     this.spawnCount = 5;
-    this.elapsedTime = 0;
   }
   update(delta) {
-    this.elapsedTime += delta;
-    // enemies
-    if (this.elapsedTime / this.spawnInterval >= 1) {
-      let randomCoords = randomPosition(this.spawnCount, 400, -400);
-      let enemies = randomCoords.map((coord) => {
-        return new Enemy(coord, random(50, 100));
-      });
+    this.spawnInterval(delta, () => {
+      let enemies = createEnemies(this.spawnCount, this.config.enemySize);
       this.actors.push(...enemies);
-
-      this.elapsedTime = 0;
-    }
+    });
 
     let bullets = [];
     this.actors.map((enemy) => {
       if (enemy.isFiring && enemy.position.y > 0) {
-        let bulletPos = new Vec(enemy.position.x + 11.5, enemy.position.y + 26);
-        bullets.push(new Bullet(bulletPos, enemy.speed * 3, 10));
+        let bulletPos = new Vec(
+          enemy.position.x + enemy.size.x / 2,
+          enemy.position.y + enemy.size.y
+        );
+        bullets.push(new Bullet(this.config.bulletSize, bulletPos, 500, 10));
       }
     });
     this.actors.push(...bullets);
@@ -167,7 +172,10 @@ class State {
 function runGame() {
   const displayParent = document.getElementById("wrapper");
   let display = new Display(displayParent);
-  let state = new State();
+  let state = new State({
+    enemySize: new Vec(10, 24),
+    bulletSize: new Vec(10, 10),
+  });
 
   let lastTime = performance.now();
   function loop(time) {
