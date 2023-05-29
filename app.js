@@ -65,11 +65,22 @@ class Vec {
     this.x = x;
     this.y = y;
   }
+
+  multiplyScalar(factor) {
+    return new Vec(this.x * factor, this.y * factor);
+  }
+  multiply(vec) {
+    return new Vec(this.x * vec.x, this.y * vec.y);
+  }
 }
 
 class Display {
-  constructor(parent) {
+  constructor(config, parent) {
+    this.config = config;
+    this.size = this.config.size;
     this.dom = createElement("div", { id: "display" });
+    this.dom.style.width = this.size.x + "px";
+    this.dom.style.height = this.size.y + "px";
     this.actorLayer = null;
     parent.appendChild(this.dom);
   }
@@ -92,8 +103,8 @@ class Enemy {
 
   update(delta) {
     this.isFiring = false;
-    this.interval(delta, () => (this.isFiring = true));
-    this.position.y += (this.speed * delta) / 1000;
+    // this.interval(delta, () => (this.isFiring = true));
+    // this.position.y += (this.speed * delta) / 1000;
   }
 }
 
@@ -111,32 +122,51 @@ class Bullet {
   }
 }
 
-function createDistinctEnemies(count, size, screen) {
+function arrowFormation(center, height, cellSize) {
   let coords = [];
-  let safeArea = size.x * 2;
-  for (let i = 1; i <= count; i++) {
-    let coordX;
-    for (;;) {
-      coordX = random(size.x / 2, screen.x - size.x / 2);
-      let isUnique = coords.map((vec) => vec.x).includes(coordX);
-      let isOverlaped = coords.some(({ x }) => {
-        return x + safeArea > coordX && x - safeArea < coordX;
-      });
-      if (!isOverlaped && !isUnique) {
-        coords.push(new Vec(coordX, -24));
-        break;
-      }
+  coords.push(center);
+  for (let count = 1; count <= height * 2 - 1; count++) {
+    if (count % 2 == 0) {
+      let coordY = center.y - cellSize.y * count;
+      let coordA = new Vec(center.x - cellSize.x * count, coordY);
+      let coordB = new Vec(center.x + cellSize.x * count, coordY);
+      coords.push(coordA, coordB);
     }
   }
-  return coords.map((coord) => new Enemy(size, coord, random(100, 300)));
+  return coords;
 }
 
-function createEnemies(count, size) {
-  let randomCoords = randomPosition(count, 400, -400);
-  let enemies = randomCoords.map((coord) => {
-    return new Enemy(size, coord, 100);
-  });
-  return enemies;
+function diamondFormation(center, height, cellSize) {
+  let coords = [];
+  for (let count = 1; count <= height * 4 - 1; count++) {
+    let coordY = center.y - cellSize.y * count;
+    if (count <= height && count % 2 == 0) {
+      let coordA = new Vec(center.x - cellSize.x * count, coordY);
+      let coordB = new Vec(center.x + cellSize.x * count, coordY);
+      coords.push(coordA, coordB);
+    }
+
+    if (count >= height && count % 2 == 0) {
+      let coordA = new Vec(center.x + cellSize.x * count, coordY);
+      let coordB = new Vec(center.x - cellSize.x * count, coordY);
+      coords.push(coordA, coordB);
+    }
+  }
+
+  return coords;
+}
+
+function createDistinctEnemies(display) {
+  let coords = [];
+  let displaySize = display.size;
+  let cellSize = display.cellSize;
+  let center = new Vec(displaySize.x / 2, 400);
+  let radius = 4;
+
+  let circularCoords = diamondFormation(center, radius, cellSize);
+  coords.push(...circularCoords);
+
+  return coords.map((coord) => new Enemy(cellSize, coord, 200));
 }
 
 class State {
@@ -144,17 +174,19 @@ class State {
     this.actors = [];
     this.config = config;
     this.spawnInterval = createInterval(1000);
-    this.spawnCount = 5;
+    this.spawnCount = 1;
   }
   update(delta) {
+    if (this.actors.length == 0) {
+      let enemies = createDistinctEnemies(this.config.display);
+      console.log(enemies);
+      this.actors.push(...enemies);
+    }
+
     this.spawnInterval(delta, () => {
       // let enemies = createEnemies(this.spawnCount, this.config.enemySize);
-      let enemies = createDistinctEnemies(
-        this.spawnCount,
-        this.config.enemySize,
-        this.config.screenSize
-      );
-      this.actors.push(...enemies);
+      // let enemies = createDistinctEnemies(this.config.display);
+      // this.actors.push(...enemies);
     });
 
     let bullets = [];
@@ -169,7 +201,9 @@ class State {
     });
     this.actors.push(...bullets);
 
-    this.actors = this.actors.filter((actor) => actor.position.y <= 800);
+    this.actors = this.actors.filter(
+      (actor) => actor.position.y <= this.config.display.size.y
+    );
     this.actors.forEach((actor) => {
       actor.update(delta);
     });
@@ -178,12 +212,21 @@ class State {
 
 function runGame() {
   const displayParent = document.getElementById("wrapper");
-  let display = new Display(displayParent);
+
   let state = new State({
-    enemySize: new Vec(16, 24),
-    bulletSize: new Vec(6, 6),
-    screenSize: new Vec(400, 800),
+    enemySize: new Vec(32, 32),
+    bulletSize: new Vec(4, 4),
+    display: {
+      scale: 0.8,
+      cellSize: new Vec(16, 16),
+      gridSize: new Vec(32, 64),
+      get size() {
+        return this.gridSize.multiply(this.cellSize.multiplyScalar(this.scale));
+      },
+    },
   });
+
+  let display = new Display(state.config.display, displayParent);
 
   let lastTime = performance.now();
   function loop(time) {
