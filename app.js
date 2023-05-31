@@ -138,21 +138,38 @@ function arrowFormation(center, height, cellSize) {
 
 function diamondFormation(center, height, cellSize) {
   let coords = [];
-  for (let count = 1; count <= height * 4 - 1; count++) {
-    let coordY = center.y - cellSize.y * count;
-    if (count <= height && count % 2 == 0) {
-      let coordA = new Vec(center.x - cellSize.x * count, coordY);
-      let coordB = new Vec(center.x + cellSize.x * count, coordY);
-      coords.push(coordA, coordB);
-    }
+  coords.push(center);
+  console.log(center);
+  for (let count = 0; count <= height; count++) {
+    let distance = height - count;
+    let bodyX = cellSize.x / 2;
+    let bodyY = cellSize.y / 2;
 
-    if (count >= height && count % 2 == 0) {
-      let coordA = new Vec(center.x + cellSize.x * count, coordY);
-      let coordB = new Vec(center.x - cellSize.x * count, coordY);
-      coords.push(coordA, coordB);
-    }
+    let leftX = center.x - cellSize.x * distance;
+    let leftY = center.y - count * cellSize.y;
+
+    console.log(leftX);
+
+    // let rightX = center.x + bodyX - cellSize.x * distance;
+    // let topY = center.y - bodyY - cellSize.y * distance;
+    // let bottomY = center.y + bodyY - cellSize.y * distance;
+
+    let coordA = new Vec(leftX, leftY);
+    // let coordB = new Vec(
+    //   center.x - cellSize.x - count * cellSize.x,
+    //   center.y - cellSize.y / 2 - (height - count) * cellSize.y
+    // );
+    // let coordC = new Vec(
+    //   center.x + cellSize.x + count * cellSize.x,
+    //   center.y + cellSize.y / 2 + (height - count) * cellSize.y
+    // );
+    // let coordD = new Vec(
+    //   center.x - cellSize.x - count * cellSize.x,
+    //   center.y + cellSize.y / 2 + (height - count) * cellSize.y
+    // );
+    coords.push(coordA);
   }
-
+  console.log(coords);
   return coords;
 }
 
@@ -179,7 +196,6 @@ class State {
   update(delta) {
     if (this.actors.length == 0) {
       let enemies = createDistinctEnemies(this.config.display);
-      console.log(enemies);
       this.actors.push(...enemies);
     }
 
@@ -218,8 +234,8 @@ function runGame() {
     bulletSize: new Vec(4, 4),
     display: {
       scale: 0.8,
-      cellSize: new Vec(16, 16),
-      gridSize: new Vec(32, 64),
+      cellSize: new Vec(32, 32),
+      gridSize: new Vec(16, 32),
       get size() {
         return this.gridSize.multiply(this.cellSize.multiplyScalar(this.scale));
       },
