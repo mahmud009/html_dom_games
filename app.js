@@ -51,7 +51,7 @@ function draw(actors) {
     let borderWidth = 2;
     dom.style.width = child.size.x - borderWidth * 2 + "px";
     dom.style.height = child.size.y - borderWidth * 2 + "px";
-    dom.style.borderWidth = borderWidth;
+    dom.style.border = `${borderWidth}px solid`;
     dom.style.top = child.position.y + "px";
     dom.style.left = child.position.x + "px";
     dom.style.transform = "translate(-50%, -50%)";
@@ -73,6 +73,8 @@ class Vec {
     return new Vec(this.x * vec.x, this.y * vec.y);
   }
 }
+
+let vec = new Vec(4, 5);
 
 class Display {
   constructor(config, parent) {
@@ -139,37 +141,21 @@ function arrowFormation(center, height, cellSize) {
 function diamondFormation(center, height, cellSize) {
   let coords = [];
   coords.push(center);
-  console.log(center);
-  for (let count = 0; count <= height; count++) {
-    let distance = height - count;
-    let bodyX = cellSize.x / 2;
-    let bodyY = cellSize.y / 2;
 
-    let leftX = center.x - cellSize.x * distance;
-    let leftY = center.y - count * cellSize.y;
-
-    console.log(leftX);
-
-    // let rightX = center.x + bodyX - cellSize.x * distance;
-    // let topY = center.y - bodyY - cellSize.y * distance;
-    // let bottomY = center.y + bodyY - cellSize.y * distance;
-
-    let coordA = new Vec(leftX, leftY);
-    // let coordB = new Vec(
-    //   center.x - cellSize.x - count * cellSize.x,
-    //   center.y - cellSize.y / 2 - (height - count) * cellSize.y
-    // );
-    // let coordC = new Vec(
-    //   center.x + cellSize.x + count * cellSize.x,
-    //   center.y + cellSize.y / 2 + (height - count) * cellSize.y
-    // );
-    // let coordD = new Vec(
-    //   center.x - cellSize.x - count * cellSize.x,
-    //   center.y + cellSize.y / 2 + (height - count) * cellSize.y
-    // );
-    coords.push(coordA);
+  for (let count = 1; count < height; count++) {
+    if (count > 0) {
+      let distance = height - count;
+      let leftX = center.x - distance * cellSize.x;
+      let leftY = center.y - count * cellSize.y;
+      let rightX = center.x + distance * cellSize.x;
+      let rightY = center.y - count * cellSize.y;
+      let coordA = new Vec(leftX, leftY);
+      let coordB = new Vec(rightX, rightY);
+      coords.push(coordA);
+      coords.push(coordB);
+    }
   }
-  console.log(coords);
+
   return coords;
 }
 
@@ -177,7 +163,7 @@ function createDistinctEnemies(display) {
   let coords = [];
   let displaySize = display.size;
   let cellSize = display.cellSize;
-  let center = new Vec(displaySize.x / 2, 400);
+  let center = new Vec(displaySize.x / 2, displaySize.y / 2);
   let radius = 4;
 
   let circularCoords = diamondFormation(center, radius, cellSize);
@@ -230,11 +216,10 @@ function runGame() {
   const displayParent = document.getElementById("wrapper");
 
   let state = new State({
-    enemySize: new Vec(32, 32),
     bulletSize: new Vec(4, 4),
     display: {
-      scale: 0.8,
-      cellSize: new Vec(32, 32),
+      scale: 1,
+      cellSize: new Vec(16, 16),
       gridSize: new Vec(16, 32),
       get size() {
         return this.gridSize.multiply(this.cellSize.multiplyScalar(this.scale));
@@ -252,6 +237,7 @@ function runGame() {
     display.sync(() => draw(state.actors));
     requestAnimationFrame(loop);
   }
+
   loop(lastTime);
 }
 

@@ -34,9 +34,7 @@ body {
   /* width: 24px;
   height: 24px; */
   background-color: #9f006c;
-  border-color: #f606a4;
-  border-style: solid;
-  /* border-width: 2px; */
+  border-color: #f606a4 !important;
   /* border-style: inset; */
   /* border-radius: 2px; */
   /* clip-path: polygon(50% 100%, 0 0, 100% 0); */
