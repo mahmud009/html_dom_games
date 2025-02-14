@@ -43,8 +43,8 @@ body {
 .bullet {
   /* width: 10px;
   height: 10px; */
-  /* border-radius: 50%; */
-  border-style: solid;
+  border-radius: 50%;
+  border-width: 1px !important;
   background-color: orange;
   border-color: red;
 }
