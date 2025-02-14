@@ -1,35 +1,23 @@
 import React from "react";
-import { State } from "./system/State";
-import { Vec } from "./system/Vec";
-import { Display } from "./system/Display";
-import { drawActors } from "./utils/draw-actors";
+import { GameState } from "./system/GameState";
+import { CanvasDisplay, Display } from "./system/Display";
+import { drawActors, drawCanvasActors } from "./utils/draw-actors";
+import { Button, Stack } from "@mui/material";
 
-const gameState = new State({
-  bulletSize: new Vec(12, 12),
-  enemySize: new Vec(12, 12),
-  display: {
-    scale: 1,
-    cellSize: new Vec(16, 16),
-    gridSize: new Vec(16, 32),
-    get size() {
-      return this.gridSize.multiply(this.cellSize.multiplyScalar(this.scale));
-    },
-  },
-});
+const gameState = new GameState();
 
-function runGame(state) {
+function runGame() {
   const displayParent = document.getElementById("wrapper");
-  const displayConfig = state.config.display;
-
-  const display = new Display(displayConfig, displayParent);
+  const display = new CanvasDisplay(displayParent);
 
   let lastTime = performance.now();
   function loop(time) {
     const delta = time - lastTime;
     lastTime = time;
-    if (!state.isPaused) {
-      state.update(delta);
-      display.sync(() => drawActors(state.actors));
+    if (gameState.isPlaying) {
+      gameState.update(delta);
+      // display.sync(() => drawActors(gameState.actors));
+      display.sync(() => drawCanvasActors(display.canvasCtx, gameState.actors));
     }
     requestAnimationFrame(loop);
   }
@@ -38,12 +26,34 @@ function runGame(state) {
 }
 
 function App() {
+  const [isGameRendered, setIsGameRendered] = React.useState(false);
+
   React.useEffect(() => {
-    // console.log(createDomElement);
-    runGame(gameState);
+    if (!isGameRendered) {
+      runGame();
+      setIsGameRendered(true);
+    }
   }, []);
 
-  return <div id="wrapper"></div>;
+  return (
+    <Stack p={4} spacing={2} alignItems={"center"}>
+      <div id="wrapper"></div>
+
+      <Stack direction={"row"} spacing={2}>
+        <Button variant="contained" onClick={() => gameState.start()}>
+          Start
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            gameState.pause();
+          }}
+        >
+          Pause
+        </Button>
+      </Stack>
+    </Stack>
+  );
 }
 
 export default App;
