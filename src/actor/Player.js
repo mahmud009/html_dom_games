@@ -1,16 +1,20 @@
-import { displayConfig } from "src/common/display-config";
+import { canvasDisplayConfig, displayConfig } from "src/common/display-config";
 import { clamp } from "src/lib/clamp";
 import { Vec } from "src/system/Vec";
+import { Bullet } from "./Bullet";
+import { createInterval } from "src/utils/create-interval";
+import { GameState } from "src/system/GameState";
 
 export class Player {
   constructor() {
     this.type = "player";
-    const displaySize = displayConfig.size;
+    const displaySize = canvasDisplayConfig.size;
     this.position = new Vec(displaySize.x / 2, displaySize.y - 16);
     this.velocity = new Vec(0, 0);
     this.size = new Vec(16, 16);
+    this.interval = createInterval(300);
     this.isFiring = false;
-    this.gameState = null;
+    this.gameState = GameState.getInstance();
     this.keys = {
       ArrowUp: false,
       ArrowDown: false,
@@ -23,7 +27,9 @@ export class Player {
     this.listenKeys();
     this.move();
     this.gameState = gameState;
-    this.isFiring = true;
+    this.isFiring = false;
+    this.interval(delta, () => (this.isFiring = true));
+    if (this.isFiring) this.fire();
   }
 
   listenKeys() {
@@ -63,11 +69,39 @@ export class Player {
 
     // Boundary constraints
     const nextPos = new Vec(this.position.x, this.position.y);
-    const playerXHalf = this.size.x / 2;
-    const playerYHalf = this.size.y / 2;
-    const displaySize = displayConfig.size;
-    nextPos.x = clamp(nextPos.x, playerXHalf, displaySize.x - playerXHalf);
-    nextPos.y = clamp(nextPos.y, playerYHalf, displaySize.y - playerYHalf);
+    const displaySize = canvasDisplayConfig.size;
+    nextPos.x = clamp(nextPos.x, 0, displaySize.x - this.size.x);
+    nextPos.y = clamp(nextPos.y, 0, displaySize.y - this.size.y);
     this.position = nextPos;
+  }
+
+  fire() {
+    const size = new Vec(5, 5);
+    let position = new Vec(
+      this.position.x + this.size.x / 2 - size.x / 2,
+      this.position.y
+    );
+    const bullet = new Bullet(size, position, 400, "up");
+    this.gameState.actors.push(bullet);
+  }
+
+  draw() {
+    const ctx = this.gameState.canvasCtx;
+    ctx.imageSmoothingEnabled = true;
+
+    ctx.fillStyle = "#098b8d"; // Change color if needed
+    ctx.strokeStyle = "#2febf0"; // Change color if needed
+    ctx.lineWidth = 6; // Set stroke thickness
+    ctx.lineJoin = "round";
+
+    // Begin drawing the triangle
+    ctx.beginPath();
+    ctx.moveTo(this.position.x - 24, this.position.y); // First point
+    ctx.lineTo(this.position.x + 24, this.position.y); // Second point
+    ctx.lineTo(this.position.x, this.position.y - 32); // Third point
+    ctx.closePath();
+
+    ctx.fill();
+    ctx.stroke();
   }
 }

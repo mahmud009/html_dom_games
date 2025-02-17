@@ -1,5 +1,6 @@
-import { displayConfig } from "src/common/display-config";
+import { canvasDisplayConfig, displayConfig } from "src/common/display-config";
 import { createDomElement } from "src/utils/create-dom-element";
+import { GameState } from "./GameState";
 
 export class Display {
   constructor(parent) {
@@ -14,23 +15,22 @@ export class Display {
     parent.appendChild(this.dom);
   }
   sync(draw) {
-    console.log(this.actorLayer);
     if (this.actorLayer) this.actorLayer.remove();
-    // this.canvasCtx.clearRect(0, 0, this.size.x, this.size.y);
     this.actorLayer = draw();
-    this.dom.appendChild(this.actorLayer);
   }
 }
 
 export class CanvasDisplay {
   constructor(parent) {
-    this.config = displayConfig;
+    this.config = canvasDisplayConfig;
     this.size = this.config.size;
-    this.dom = createDomElement("canvas", { id: "display" });
+    this.dom = createDomElement("canvas", { id: "canvas-display" });
     this.canvasCtx = this.dom.getContext("2d");
     this.dom.width = this.size.x;
     this.dom.height = this.size.y;
     parent.appendChild(this.dom);
+    this.gameState = GameState.getInstance();
+    this.gameState.canvasCtx = this.canvasCtx;
   }
   sync(draw) {
     this.canvasCtx.clearRect(0, 0, this.size.x, this.size.y);

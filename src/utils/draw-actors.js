@@ -16,15 +16,9 @@ export function drawActors(actors) {
   return createDomElement("div", {}, ...children);
 }
 
-export function drawCanvasActors(canvaxCtx, actors) {
+export function drawCanvasActors(actors) {
   actors.forEach((actor) => {
-    canvaxCtx.fillStyle = "white";
-    canvaxCtx.fillRect(
-      actor.position.x,
-      actor.position.y,
-      actor.size.x,
-      actor.size.y
-    );
+    actor.draw();
   });
   return actors;
 }

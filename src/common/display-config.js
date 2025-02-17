@@ -8,3 +8,7 @@ export const displayConfig = {
     return this.gridSize.multiply(this.cellSize.multiplyScalar(this.scale));
   },
 };
+
+export const canvasDisplayConfig = {
+  size: new Vec(256, 512),
+};

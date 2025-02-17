@@ -9,6 +9,7 @@ const gameState = new GameState();
 function runGame() {
   const displayParent = document.getElementById("wrapper");
   const display = new CanvasDisplay(displayParent);
+  gameState.canvasCtx = display.canvasCtx;
 
   let lastTime = performance.now();
   function loop(time) {
@@ -16,8 +17,7 @@ function runGame() {
     lastTime = time;
     if (gameState.isPlaying) {
       gameState.update(delta);
-      // display.sync(() => drawActors(gameState.actors));
-      display.sync(() => drawCanvasActors(display.canvasCtx, gameState.actors));
+      display.sync(() => drawCanvasActors(gameState.actors));
     }
     requestAnimationFrame(loop);
   }

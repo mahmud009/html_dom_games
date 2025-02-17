@@ -6,12 +6,17 @@ import { gameConfig } from "src/common/game-config";
 import { Player } from "src/actor/Player";
 import { displayConfig } from "src/common/display-config";
 
+let instance = null;
+
 export class GameState {
   constructor() {
     this.actors = [];
+    this.canvasCtx = null;
     this.spawnInterval = createInterval(1000);
     this.spawnCount = 1;
     this.isPlaying = true;
+    this.canvasCtx = null;
+    instance = this;
   }
 
   start() {
@@ -19,6 +24,11 @@ export class GameState {
   }
   pause() {
     this.isPlaying = false;
+  }
+
+  static getInstance() {
+    if (!instance) instance = new GameState();
+    return instance;
   }
 
   update(delta) {

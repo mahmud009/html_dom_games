@@ -12,6 +12,14 @@ body {
   height: 800px;
 }
 
+#canvas-display {
+  background-color: #1e222e;
+  position: relative;
+  overflow: hidden;
+  /* border-radius: 16px; */
+  box-shadow: 0px -75px 75px #18181b;
+}
+
 .actor {
   position: absolute;
 }
