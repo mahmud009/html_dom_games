@@ -16,9 +16,9 @@ export function drawActors(actors) {
   return createDomElement("div", {}, ...children);
 }
 
-export function drawCanvasActors(actors) {
+export function drawCanvasActors(actors, delta) {
   actors.forEach((actor) => {
-    actor.draw();
+    actor.draw(delta);
   });
   return actors;
 }

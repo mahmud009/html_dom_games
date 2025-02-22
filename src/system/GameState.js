@@ -15,6 +15,7 @@ export class GameState {
     this.spawnInterval = createInterval(1000);
     this.spawnCount = 1;
     this.isPlaying = true;
+    this.isPlayerDied = false;
     this.canvasCtx = null;
     instance = this;
   }
@@ -34,21 +35,26 @@ export class GameState {
   update(delta) {
     const enemies = this.actors.filter((actor) => actor.type === "enemy");
     const player = this.actors.find((actor) => actor.type === "player");
-    if (!player) this.actors.push(new Player());
+    if (!player && !this.isPlayerDied) this.actors.push(new Player());
 
-    if (enemies.length == 0) {
-      let enemies = createDistinctEnemies();
-      this.actors.push(...enemies);
-    }
-
-    // this.spawnInterval(delta, () => {
-    //   let enemies = createDistinctEnemies();
-    //   this.actors.push(...enemies);
-    // });
+    this.spawnInterval(delta, () => {
+      let currentEnemies = this.actors.filter(
+        (actor) => actor.type === "enemy"
+      );
+      if (currentEnemies.length <= 3) {
+        let enemies = createDistinctEnemies();
+        this.actors.push(...enemies);
+      }
+    });
 
     this.actors = this.actors.filter((actor) => {
       if (actor.type == "player") return true;
-      return actor.position.y < displayConfig.size.y;
+      if (actor.type == "bullet" && actor.firedBy == "player") {
+        if (actor.position.y < 0 || actor.position.y > displayConfig.size.y) {
+          return false;
+        }
+      }
+      return actor.position.y <= displayConfig.size.y;
     });
     this.actors.forEach((actor) => {
       actor.update(delta, this);

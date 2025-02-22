@@ -17,7 +17,7 @@ function runGame() {
     lastTime = time;
     if (gameState.isPlaying) {
       gameState.update(delta);
-      display.sync(() => drawCanvasActors(gameState.actors));
+      display.sync(() => drawCanvasActors(gameState.actors, delta));
     }
     requestAnimationFrame(loop);
   }

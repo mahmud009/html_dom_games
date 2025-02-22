@@ -9,11 +9,20 @@ export class Player {
   constructor() {
     this.type = "player";
     const displaySize = canvasDisplayConfig.size;
-    this.position = new Vec(displaySize.x / 2, displaySize.y - 16);
     this.velocity = new Vec(0, 0);
     this.size = new Vec(16, 16);
-    this.interval = createInterval(300);
+    this.position = new Vec(
+      displaySize.x / 2,
+      displaySize.y - this.size.y / 2 - 2
+    );
+    this.fireInterval = createInterval(100);
+    this.fireSpeed = 600;
     this.isFiring = false;
+    this.isDied = false;
+    this.dieCircleRadius = 0;
+    this.dieAnimDuration = 200;
+    this.dieAlphaStart = 1;
+    this.dieAnimInterval = createInterval(this.dieAnimDuration);
     this.gameState = GameState.getInstance();
     this.keys = {
       ArrowUp: false,
@@ -26,9 +35,8 @@ export class Player {
   update(delta, gameState) {
     this.listenKeys();
     this.move();
-    this.gameState = gameState;
     this.isFiring = false;
-    this.interval(delta, () => (this.isFiring = true));
+    this.fireInterval(delta, () => (this.isFiring = true));
     if (this.isFiring) this.fire();
   }
 
@@ -41,8 +49,8 @@ export class Player {
   }
 
   move() {
-    const acceleration = 0.5; // How fast the player accelerates
-    const maxSpeed = 3; // Maximum speed
+    const acceleration = 0.7; // How fast the player accelerates
+    const maxSpeed = 10; // Maximum speed
     const damping = 0.7; // Reduces velocity over time (0.9 means 10% reduction per frame)
 
     // Initialize velocity if not already set
@@ -70,38 +78,85 @@ export class Player {
     // Boundary constraints
     const nextPos = new Vec(this.position.x, this.position.y);
     const displaySize = canvasDisplayConfig.size;
-    nextPos.x = clamp(nextPos.x, 0, displaySize.x - this.size.x);
-    nextPos.y = clamp(nextPos.y, 0, displaySize.y - this.size.y);
+    nextPos.x = clamp(
+      nextPos.x,
+      this.size.x / 2 + 2,
+      displaySize.x - this.size.x / 2 - 2
+    );
+    nextPos.y = clamp(
+      nextPos.y,
+      this.size.y / 2 + 2,
+      displaySize.y - this.size.y / 2 - 2
+    );
     this.position = nextPos;
   }
 
   fire() {
-    const size = new Vec(5, 5);
-    let position = new Vec(
-      this.position.x + this.size.x / 2 - size.x / 2,
-      this.position.y
-    );
-    const bullet = new Bullet(size, position, 400, "up");
+    let position = new Vec(this.position.x, this.position.y - this.size.y * 2);
+    const bullet = new Bullet(4, position, this.fireSpeed, this.type);
     this.gameState.actors.push(bullet);
   }
 
-  draw() {
+  draw(delta) {
     const ctx = this.gameState.canvasCtx;
-    ctx.imageSmoothingEnabled = true;
 
-    ctx.fillStyle = "#098b8d"; // Change color if needed
-    ctx.strokeStyle = "#2febf0"; // Change color if needed
-    ctx.lineWidth = 6; // Set stroke thickness
-    ctx.lineJoin = "round";
+    if (this.isDied) {
+      ctx.fillStyle = "#524C42";
+      ctx.save();
+      this.dieAlphaStart -= delta / this.dieAnimDuration;
+      if (this.dieAlphaStart < 0) this.dieAlphaStart = 0;
+      ctx.globalAlpha = this.dieAlphaStart; // Apply the opacity
 
-    // Begin drawing the triangle
-    ctx.beginPath();
-    ctx.moveTo(this.position.x - 24, this.position.y); // First point
-    ctx.lineTo(this.position.x + 24, this.position.y); // Second point
-    ctx.lineTo(this.position.x, this.position.y - 32); // Third point
-    ctx.closePath();
+      this.dieCircleRadius += 20 / (this.dieAnimDuration / delta);
+      ctx.beginPath();
+      ctx.arc(
+        this.position.x,
+        this.position.y,
+        this.dieCircleRadius,
+        0,
+        2 * Math.PI
+      ); // Draw a circle
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      this.dieAnimInterval(delta, () => {
+        this.gameState.actors = this.gameState.actors.filter(
+          (actor) => actor !== this
+        );
+        this.gameState.isPlayerDied = true;
+      });
+    } else {
+      ctx.fillStyle = "#098b8d"; // Change color if needed
+      ctx.strokeStyle = "#2febf0"; // Change color if needed
+      ctx.lineWidth = 1; // Set stroke thickness
+      ctx.lineJoin = "round";
 
-    ctx.fill();
-    ctx.stroke();
+      // Begin drawing the square
+      ctx.beginPath();
+      // Top-left corner
+      ctx.moveTo(
+        this.position.x - this.size.x / 2,
+        this.position.y - this.size.y / 2
+      );
+      // Top-right corner
+      ctx.lineTo(
+        this.position.x + this.size.x / 2,
+        this.position.y - this.size.y / 2
+      );
+      // Bottom-right corner
+      ctx.lineTo(
+        this.position.x + this.size.x / 2,
+        this.position.y + this.size.y / 2
+      );
+      // Bottom-left corner
+      ctx.lineTo(
+        this.position.x - this.size.x / 2,
+        this.position.y + this.size.y / 2
+      );
+      ctx.closePath();
+
+      ctx.fill();
+      ctx.stroke();
+    }
   }
 }
